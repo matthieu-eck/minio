@@ -64,11 +64,16 @@ docker_sse_encryption_env() {
 
 # su-exec to requested user, if service cannot run exec will fail.
 docker_switch_user() {
-    if [ ! -z "${MINIO_USERNAME}" ] && [ ! -z "${MINIO_GROUPNAME}" ]; then
+    if [ ! -z "${MINIO_USERNAME}" ] && [ ! -z "${MINIO_GROUPNAME}" ] && [ "$(id -u)" = '0' ]; then
         addgroup -S "$MINIO_GROUPNAME" >/dev/null 2>&1 && \
-            adduser -S -G "$MINIO_GROUPNAME" "$MINIO_USERNAME" >/dev/null 2>&1
-
+        adduser -S -G "$MINIO_GROUPNAME" "$MINIO_USERNAME" >/dev/null 2>&1
         exec su-exec "${MINIO_USERNAME}:${MINIO_GROUPNAME}" "$@"
+    elif ( [ "${MINIO_USERNAME}" = 'minio' ] || [ "${MINIO_GROUPNAME}" = 'minio' ] ) && ([ "$(id -u)" != '100' ] || [ "$(id -g)" != '101' ] ); then
+        echo "ERROR: Impossible to run container as non-root with a different uid than 100 and gid 101."
+        exit 2
+    elif ( [ "${MINIO_USERNAME}" != 'minio' ] || [ "${MINIO_GROUPNAME}" != 'minio' ] ) && [ "$(id -u)" != '0' ]; then
+        echo "ERROR: Impossible to run container as non-root with a different user than 'minio'. MINIO_USERNAME and MINIO_GROUPNAME should be 'minio'."
+        exit 2
     else
         # fallback
         exec "$@"

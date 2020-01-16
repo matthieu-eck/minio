@@ -27,7 +27,9 @@ COPY dockerscripts/docker-entrypoint.sh /usr/bin/
 
 RUN  \
      apk add --no-cache ca-certificates 'curl>7.61.0' 'su-exec>=0.2' && \
-     echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf
+     echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf && \
+     addgroup -g 101 -S minio && \
+     adduser -u 100 -S  -G minio minio
 
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 
